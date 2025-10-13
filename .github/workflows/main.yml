@@ -1,0 +1,87 @@
+name: Build IPQ807x NSS WiFi - AX9000 + fan
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Prepare and build IPQ807x NSS generic images
+    runs-on: ubuntu-latest
+    env:
+      TZ: Europe/Budapest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Update and install feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Import full config for IPQ807x NSS Generic
+        run: |
+          cp .full_config .config
+
+      - name: QoL fixes on default config
+        run: |
+          mkdir -p files/etc/uci-defaults
+          cat > files/etc/uci-defaults/99-qol_fixes << EOF
+          uci set wireless.radio0.country='US'
+          uci set wireless.radio1.country='US'
+          uci set wireless.radio2.country='US'
+          uci set wireless.radio1.disabled=0
+          uci set wireless.radio2.disabled=0
+          uci set pbuf.opt.memory_profile=auto
+          uci set firewall.@defaults[0].flow_offloading=0
+          uci set ecm.@general[0].enable_bridge_filtering=0
+          uci set system.@system[0].cronloglevel='7'
+          /etc/init.d/mwan3 stop
+          /etc/init.d/mwan3 disable
+          /etc/init.d/sqm stop
+          /etc/init.d/sqm disable
+          uci commit
+          EOF
+
+      - name: Download package sources
+        run: make download V=s
+
+      - name: Build tools
+        run: |
+          make tools/install -j$(nproc) V=s || make tools/install V=s
+
+      - name: Build toolchain
+        run: |
+          make toolchain/install -j$(nproc) V=s || make toolchain/install V=s
+
+      - name: Build full firmware and packages
+        run: |
+          make -j$(nproc) V=s || make V=s
+
+      - name: Get the current date
+        id: date
+        run: echo "now=$(date +'%Y-%m-%d-%H%M')" >> "$GITHUB_OUTPUT"
+
+      - name: Upload firmware as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipq807x-nsswifi-firmware
+          path: bin/targets/qualcommax/ipq807x/
+
+      - name: Upload packages (kmod + user packages) as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipq807x-nsswifi-packages
+          path: bin/packages/**/*
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          name: "Updated prebuilt images (NSS-WiFi) ${{ steps.date.outputs.now }}"
+          tag: "ipq807x-nsswifi-${{ steps.date.outputs.now }}"
+          generateReleaseNotes: true
+          makeLatest: true
+          artifacts: |
+            bin/targets/qualcommax/ipq807x/*
+            bin/packages/**/*
+          token: ${{ secrets.GITHUB_TOKEN }}
