@@ -16,9 +16,10 @@ jobs:
 
       - name: Move OpenWrt build to larger volume
         run: |
-          sudo rm -rf /home/runner/work/openwrt
           sudo mkdir -p /mnt/openwrt
-          sudo ln -s /mnt/openwrt /home/runner/work/openwrt
+          sudo rsync -a $GITHUB_WORKSPACE/ /mnt/openwrt/
+          sudo rm -rf $GITHUB_WORKSPACE/*
+          sudo ln -s /mnt/openwrt/* $GITHUB_WORKSPACE/
           df -h
           
       - name: Update and install feeds
