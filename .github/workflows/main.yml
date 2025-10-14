@@ -18,15 +18,17 @@ jobs:
         run: |
           echo "Before:"
           df -h
-          sudo mkdir -p /mnt/openwrt_build
-          sudo chown $USER:$USER /mnt/openwrt_build
-          rm -rf dl build_dir staging_dir tmp
-          ln -s /mnt/openwrt_build/dl dl
-          ln -s /mnt/openwrt_build/build_dir build_dir
-          ln -s /mnt/openwrt_build/staging_dir staging_dir
-          ln -s /mnt/openwrt_build/tmp tmp
-          echo "After:"
+          sudo mkdir -p /mnt/openwrt_build/{dl,build_dir,staging_dir}
+          sudo chown -R $USER:$USER /mnt/openwrt_build
+          rm -rf dl build_dir staging_dir
+          ln -sf /mnt/openwrt_build/dl dl
+          ln -sf /mnt/openwrt_build/build_dir build_dir
+          ln -sf /mnt/openwrt_build/staging_dir staging_dir
+          mkdir -p tmp
+          echo "After link setup:"
+          ls -l
           df -h
+
 
           
       - name: Update and install feeds
