@@ -14,6 +14,13 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Move OpenWrt build to larger volume
+        run: |
+          sudo rm -rf /home/runner/work/openwrt
+          sudo mkdir -p /mnt/openwrt
+          sudo ln -s /mnt/openwrt /home/runner/work/openwrt
+          df -h
+          
       - name: Update and install feeds
         run: |
           ./scripts/feeds update -a
