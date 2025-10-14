@@ -18,15 +18,16 @@ jobs:
         run: |
           echo "Before:"
           df -h
-          mkdir -p /mnt/openwrt_build
-          # áthelyezzük a nagy könyvtárakat /mnt-re
-          sudo rm -rf dl build_dir staging_dir tmp
+          sudo mkdir -p /mnt/openwrt_build
+          sudo chown $USER:$USER /mnt/openwrt_build
+          rm -rf dl build_dir staging_dir tmp
           ln -s /mnt/openwrt_build/dl dl
           ln -s /mnt/openwrt_build/build_dir build_dir
           ln -s /mnt/openwrt_build/staging_dir staging_dir
           ln -s /mnt/openwrt_build/tmp tmp
           echo "After:"
           df -h
+
           
       - name: Update and install feeds
         run: |
